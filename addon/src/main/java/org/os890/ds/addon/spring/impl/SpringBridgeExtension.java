@@ -18,6 +18,7 @@
  */
 package org.os890.ds.addon.spring.impl;
 
+import org.apache.deltaspike.core.api.provider.BeanProvider;
 import org.apache.deltaspike.core.util.ClassUtils;
 import org.apache.deltaspike.core.util.ExceptionUtils;
 import org.apache.deltaspike.core.util.ServiceUtils;
@@ -52,7 +53,7 @@ public class SpringBridgeExtension implements Extension
     private static ThreadLocal<List<Bean<?>>> currentCdiBeans = new ThreadLocal<List<Bean<?>>>();
     private static ThreadLocal<BeanManager> currentBeanManager = new ThreadLocal<BeanManager>();
 
-    private ConfigurableApplicationContext springContext;
+    private EditableConfigurableApplicationContextProxy springContext;
 
     private List<BeanFilter> beanFilterList = new ArrayList<BeanFilter>();
 
@@ -115,7 +116,7 @@ public class SpringBridgeExtension implements Extension
 
     public void initContainerBridge(@Observes AfterBeanDiscovery abd, BeanManager beanManager)
     {
-        this.springContext = resolveSpringContext(abd, beanManager);
+        this.springContext = new EditableConfigurableApplicationContextProxy(resolveSpringContext(abd, beanManager));
 
         if (this.springContext == null)
         {
@@ -312,6 +313,18 @@ public class SpringBridgeExtension implements Extension
     ApplicationContext getApplicationContext()
     {
         return springContext;
+    }
+
+    //only allowed after the bootstrapping process
+    //needed by other bridges which have to merge different context instances
+    public static void updateSpringContext(ConfigurableApplicationContext springContext)
+    {
+        ApplicationContext context = BeanProvider.getContextualReference(SpringBridgeExtension.class).getApplicationContext();
+
+        if (context instanceof EditableConfigurableApplicationContextProxy)
+        {
+            ((EditableConfigurableApplicationContextProxy)context).setWrapped(springContext);
+        }
     }
 
     public static Map<String, Bean<?>> getCdiBeans()

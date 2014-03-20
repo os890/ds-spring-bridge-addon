@@ -31,7 +31,7 @@
 
     <properties>
         <owb.version>1.2.1</owb.version>
-        <ds.version>0.6-SNAPSHOT</ds.version>
+        <ds.version>0.6</ds.version>
 
         <spring.version>3.2.6.RELEASE</spring.version>
     </properties>

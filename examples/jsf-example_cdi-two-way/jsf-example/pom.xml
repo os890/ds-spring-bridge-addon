@@ -34,7 +34,7 @@
         <slf4j.version>1.6.6</slf4j.version>
         <jsf-myfaces.version>2.1.13</jsf-myfaces.version>
         <openwebbeans.version>1.2.1</openwebbeans.version>
-        <ds.version>0.6-SNAPSHOT</ds.version>
+        <ds.version>1.0.3</ds.version>
     </properties>
 
     <repositories>

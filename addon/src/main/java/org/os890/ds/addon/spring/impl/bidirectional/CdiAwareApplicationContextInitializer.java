@@ -19,7 +19,6 @@
 package org.os890.ds.addon.spring.impl.bidirectional;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.os890.ds.addon.spring.impl.CdiAwareBeanFactoryPostProcessor;
 import org.os890.ds.addon.spring.impl.SpringBridgeExtension;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -38,7 +37,6 @@ public class CdiAwareApplicationContextInitializer implements ApplicationContext
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext)
     {
-        applicationContext.addBeanFactoryPostProcessor(new CdiAwareBeanFactoryPostProcessor(
-            SpringBridgeExtension.getBeanManager(), SpringBridgeExtension.getCdiBeans()));
+        applicationContext.addBeanFactoryPostProcessor(SpringBridgeExtension.getBeanFactoryPostProcessor());
     }
 }

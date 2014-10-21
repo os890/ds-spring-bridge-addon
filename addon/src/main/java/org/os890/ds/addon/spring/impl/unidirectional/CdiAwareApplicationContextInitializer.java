@@ -19,7 +19,6 @@
 package org.os890.ds.addon.spring.impl.unidirectional;
 
 import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.os890.ds.addon.spring.impl.CdiAwareBeanFactoryPostProcessor;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -30,7 +29,6 @@ public class CdiAwareApplicationContextInitializer implements ApplicationContext
     @Override
     public void initialize(ConfigurableApplicationContext applicationContext)
     {
-        applicationContext.addBeanFactoryPostProcessor(new CdiAwareBeanFactoryPostProcessor(
-            EmptySpringContainerManager.getFoundBeanManager(), EmptySpringContainerManager.getFoundCdiBeans()));
+        applicationContext.addBeanFactoryPostProcessor(EmptySpringContainerManager.getBeanFactoryPostProcessor());
     }
 }

@@ -40,6 +40,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import javax.enterprise.context.Dependent;
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.*;
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -50,8 +51,7 @@ import java.util.*;
 public class SpringBridgeExtension implements Extension
 {
     private List<Bean<?>> cdiBeansForSpring = new ArrayList<Bean<?>>();
-    private static ThreadLocal<List<Bean<?>>> currentCdiBeans = new ThreadLocal<List<Bean<?>>>();
-    private static ThreadLocal<BeanManager> currentBeanManager = new ThreadLocal<BeanManager>();
+    private static ThreadLocal<BeanFactoryPostProcessor> currentBeanFactoryPostProcessor = new ThreadLocal<BeanFactoryPostProcessor>();
 
     private EditableConfigurableApplicationContextProxy springContext;
 
@@ -64,13 +64,13 @@ public class SpringBridgeExtension implements Extension
 
     //for supporting producers ProcessBean would be needed
     //however later on Bean#getBeanClass is used which returns the producer-class and not the return-type of the producer (like #getTypes)
-    public void recordBeans(@Observes ProcessManagedBean pb)
+    public void recordBeans(@Observes ProcessBean pb)
     {
         Bean bean = pb.getBean();
 
         if (!isSpringAdapterBean(bean) && !isFilteredCdiBean(bean.getBeanClass()))
         {
-            this.cdiBeansForSpring.add(pb.getBean());
+            this.cdiBeansForSpring.add(bean);
         }
     }
 
@@ -166,7 +166,18 @@ public class SpringBridgeExtension implements Extension
             {
                 cdiBeansForSpringMap.put(bean.getName(), bean);
             }
-            cdiBeansForSpringMap.put(bean.getBeanClass().getName(), bean);
+
+            Set<Type> beanTypes = new HashSet<Type>(bean.getTypes());
+            beanTypes.remove(Object.class);
+            beanTypes.remove(Serializable.class);
+
+            Type beanType = beanTypes.size() == 1 ? beanTypes.iterator().next() : null;
+
+            if (beanType instanceof Class) { //to support producers
+                cdiBeansForSpringMap.put(((Class) beanType).getName(), bean);
+            } else { //fallback since spring doesn't support multiple types
+                cdiBeansForSpringMap.put(bean.getBeanClass().getName(), bean);
+            }
         }
 
 
@@ -174,8 +185,7 @@ public class SpringBridgeExtension implements Extension
 
         try
         {
-            currentCdiBeans.set(this.cdiBeansForSpring);
-            currentBeanManager.set(beanManager);
+            currentBeanFactoryPostProcessor.set(beanFactoryPostProcessor);
 
             if (scmList.isEmpty())
             {
@@ -209,10 +219,8 @@ public class SpringBridgeExtension implements Extension
         }
         finally
         {
-            currentCdiBeans.set(null);
-            currentCdiBeans.remove();
-            currentBeanManager.set(null);
-            currentBeanManager.remove();
+            currentBeanFactoryPostProcessor.set(null);
+            currentBeanFactoryPostProcessor.remove();
         }
     }
 
@@ -327,23 +335,8 @@ public class SpringBridgeExtension implements Extension
         }
     }
 
-    public static Map<String, Bean<?>> getCdiBeans()
+    public static BeanFactoryPostProcessor getBeanFactoryPostProcessor()
     {
-        Map<String, Bean<?>> result = new HashMap<String, Bean<?>>();
-        for (Bean<?> bean : currentCdiBeans.get())
-        {
-            if (bean.getName() != null)
-            {
-                result.put(bean.getName(), bean);
-            }
-            result.put(bean.getBeanClass().getName(), bean);
-        }
-
-        return result;
-    }
-
-    public static BeanManager getBeanManager()
-    {
-        return currentBeanManager.get();
+        return currentBeanFactoryPostProcessor.get();
     }
 }

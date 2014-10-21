@@ -31,10 +31,14 @@ import javax.enterprise.inject.Default;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.util.Nonbinding;
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Exclude
 public class CdiAwareBeanFactoryPostProcessor implements BeanFactoryPostProcessor
@@ -73,7 +77,18 @@ public class CdiAwareBeanFactoryPostProcessor implements BeanFactoryPostProcesso
     private BeanDefinition createSpringBeanDefinition(Bean<?> cdiBean) throws Exception
     {
         AbstractBeanDefinition beanDefinition = new GenericBeanDefinition();
-        beanDefinition.setBeanClass(cdiBean.getBeanClass()); //only possible because producers aren't supported
+        Set<Type> beanTypes = new HashSet<Type>(cdiBean.getTypes());
+        beanTypes.remove(Object.class);
+        beanTypes.remove(Serializable.class);
+
+        Type beanType = beanTypes.size() == 1 ? beanTypes.iterator().next() : null;
+
+        if (beanType instanceof Class) { //to support producers
+            beanDefinition.setBeanClass((Class)beanType);
+        } else { //fallback since spring doesn't support multiple types
+            beanDefinition.setBeanClass(cdiBean.getBeanClass());
+        }
+
         beanDefinition.setScope(CdiSpringScope.class.getName());
 
         for (Annotation qualifier : cdiBean.getQualifiers())

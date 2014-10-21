@@ -28,18 +28,12 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.AbstractApplicationContext;
 
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import java.util.HashMap;
-import java.util.Map;
-
 //optional - configure it if a one-way bridge (injection of cdi-beans in spring-beans) is enough.
 //ensure that the cdi-container gets started before the spring-container
 @Exclude
 public class EmptySpringContainerManager implements SpringContainerManager
 {
-    private static Map<String, Bean<?>> foundCdiBeans;
-    private static BeanManager foundBeanManager;
+    private static BeanFactoryPostProcessor beanFactoryPostProcessor;
 
     private ConfigurableApplicationContext context;
 
@@ -58,8 +52,7 @@ public class EmptySpringContainerManager implements SpringContainerManager
     @Override
     public ConfigurableApplicationContext bootContainer(BeanFactoryPostProcessor... beanFactoryPostProcessors)
     {
-        foundCdiBeans = new HashMap<String, Bean<?>>(SpringBridgeExtension.getCdiBeans());
-        foundBeanManager = SpringBridgeExtension.getBeanManager();
+        beanFactoryPostProcessor = SpringBridgeExtension.getBeanFactoryPostProcessor();
 
         this.context = new AbstractApplicationContext()
         {
@@ -89,13 +82,8 @@ public class EmptySpringContainerManager implements SpringContainerManager
         return this.context;
     }
 
-    static Map<String, Bean<?>> getFoundCdiBeans()
+    static BeanFactoryPostProcessor getBeanFactoryPostProcessor()
     {
-        return foundCdiBeans;
-    }
-
-    static BeanManager getFoundBeanManager()
-    {
-        return foundBeanManager;
+        return beanFactoryPostProcessor;
     }
 }

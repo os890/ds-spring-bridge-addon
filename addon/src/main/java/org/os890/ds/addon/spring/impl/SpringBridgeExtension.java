@@ -128,7 +128,14 @@ public class SpringBridgeExtension implements Extension
         {
             BeanDefinition beanDefinition = this.springContext.getBeanFactory().getBeanDefinition(beanName);
 
-            Class<?> beanClass = ClassUtils.tryToLoadClassForName(beanDefinition.getBeanClassName());
+            String name = beanDefinition.getBeanClassName();
+
+            if (name == null) //can be null in case of config-files as spring bean
+            {
+                continue;
+            }
+
+            Class<?> beanClass = ClassUtils.tryToLoadClassForName(name);
 
             if (CdiSpringScope.class.getName().equals(beanDefinition.getScope()) || isFilteredSpringBean(beanClass))
             {
